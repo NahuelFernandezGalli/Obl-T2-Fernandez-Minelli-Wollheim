@@ -47,11 +47,39 @@ contract JobMarketplace is ReentrancyGuard {
     }
 
     function createJob(string calldata description, uint256 budget, address evaluator, address provider, uint64 expiresAt) external returns (uint256) {
-        revert InvalidState();
+        if (evaluator == address(0)) revert EvaluatorRequired();
+        if (budget == 0) revert ZeroBudget();
+
+        uint256 jobId = jobs.length;
+        jobs.push(Job({
+            client: msg.sender,
+            evaluator: evaluator,
+            provider: provider,
+            budget: budget,
+            expiresAt: expiresAt,
+            status: Status.Open,
+            deliverableRef: bytes32(0),
+            description: description
+        }));
+        jobCount++;
+
+        emit JobCreated(jobId, msg.sender, evaluator, provider, budget, expiresAt, description);
+        return jobId;
     }
 
     function setProvider(uint256 jobId, address provider) external {
-        revert InvalidState();
+        Job storage job = _job(jobId);
+        if (msg.sender != job.client) revert NotClient();
+        if (job.status != Status.Open) revert InvalidState();
+        if (job.provider != address(0)) revert ProviderAlreadySet();
+
+        job.provider = provider;
+        emit ProviderSet(jobId, provider);
+    }
+
+    function _job(uint256 jobId) internal view returns (Job storage) {
+        if (jobId >= jobs.length) revert InvalidJob();
+        return jobs[jobId];
     }
 
     function fund(uint256 jobId) external {
