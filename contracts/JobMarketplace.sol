@@ -145,6 +145,15 @@ contract JobMarketplace is ReentrancyGuard {
     }
 
     function claimRefund(uint256 jobId) external {
-        revert InvalidState();
+        Job storage job = _job(jobId);
+        if (block.timestamp <= job.expiresAt) revert JobNotExpired();
+        if (job.status != Status.Funded && job.status != Status.Submitted) revert InvalidState();
+
+        address client = job.client;
+        uint256 amount = job.budget;
+        job.status = Status.Expired;
+
+        token.transfer(client, amount);
+        emit Refunded(jobId, client, amount);
     }
 }
