@@ -1,0 +1,164 @@
+:root {
+  --bg: #0b1020;
+  --surface: #151a2e;
+  --surface-2: #1b2140;
+  --border: #2a3050;
+  --text: #e6e9f5;
+  --muted: #8892b0;
+  --accent: #5b8def;
+  --green: #4caf82;
+  --yellow: #e6a817;
+  --red: #e05c5c;
+  --purple: #9b6dff;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem;
+}
+
+/* Header + nav */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+.app-header h1 { margin: 0; font-size: 1.5rem; }
+.subtitle { color: var(--muted); margin: 0.2rem 0 0; font-size: 0.85rem; }
+
+.nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.nav a {
+  padding: 0.4rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.nav a.active { background: var(--accent); border-color: var(--accent); }
+.nav a:hover { text-decoration: none; filter: brightness(1.1); }
+
+.connect-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 4rem 1rem;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.panel h2 { margin: 0 0 0.75rem; font-size: 1.1rem; color: var(--accent); }
+
+dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 1.25rem;
+  row-gap: 0.4rem;
+  margin: 0;
+}
+dt { color: var(--muted); font-size: 0.9rem; }
+dd { margin: 0; word-break: break-word; }
+
+.muted { color: var(--muted); }
+.error { color: var(--red); }
+.pending { color: var(--yellow); }
+code { background: var(--bg); padding: 0.1rem 0.35rem; border-radius: 5px; }
+
+/* Job board */
+.job-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.9rem;
+}
+.job-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.job-card:hover { border-color: var(--accent); }
+.job-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.job-id { font-weight: 600; color: var(--accent); }
+.job-desc { font-weight: 500; }
+
+/* Status badges (clases generadas por statusClass) */
+.status-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.status-abierto { background: rgba(91, 141, 239, 0.15); color: var(--accent); }
+.status-fondeado { background: rgba(230, 168, 23, 0.15); color: var(--yellow); }
+.status-entregado { background: rgba(155, 109, 255, 0.18); color: var(--purple); }
+.status-completado { background: rgba(76, 175, 130, 0.18); color: var(--green); }
+.status-rechazado { background: rgba(224, 92, 92, 0.18); color: var(--red); }
+.status-expirado { background: rgba(136, 146, 176, 0.18); color: var(--muted); }
+
+/* Forms */
+.form { display: flex; flex-direction: column; gap: 0.75rem; max-width: 480px; }
+.form label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.9rem; color: var(--muted); }
+.form input, .form textarea {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  color: var(--text);
+  font-size: 0.95rem;
+  width: 100%;
+  font-family: inherit;
+}
+.form input:focus, .form textarea:focus { outline: 1px solid var(--accent); }
+
+/* Action panel */
+.actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+
+/* Buttons */
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.45rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+button:disabled { opacity: 0.35; cursor: not-allowed; }
+button:not(:disabled):hover { filter: brightness(1.1); }
+.btn-danger { background: transparent; border: 1px solid var(--red); color: var(--red); }
+.btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
