@@ -7,7 +7,7 @@ export const JOBMARKETPLACE_ADDRESS = (import.meta.env.VITE_JOBMARKETPLACE_ADDRE
 
 export const ZERO_ADDRESS: Address = '0x0000000000000000000000000000000000000000';
 
-// Estados del Job — DEBE coincidir con el enum del contrato (Fase 0).
+// Estados del Job - coincide con el enum Status del contrato.
 export const JobStatus = {
   Open: 0,
   Funded: 1,
@@ -29,195 +29,195 @@ export const JOB_STATUS_LABEL: Record<number, string> = {
 };
 
 /**
- * ABI acordada (interfaz congelada del contrato).
- * El contrato `JobMarketplace.sol` todavía no está implementado, pero esta interfaz
- * es el contrato entre las 3 capas. Si cambia una firma, se actualiza acá y se avisa al equipo.
+ * ABI generada por el compilador (Hardhat) desde contracts/JobMarketplace.sol.
+ * Fuente: artifacts/contracts/JobMarketplace.sol/JobMarketplace.json (campo `abi`).
+ * Si se recompila el contrato con cambios, regenerar esta constante desde ese artifact.
  *
- * Orden del getter auto-generado `jobs(uint256)` (declaración del struct Job):
+ * El getter auto-generado `jobs(uint256)` devuelve, en orden:
  *   client, evaluator, provider, budget, expiresAt, status, deliverableRef, description
  */
 export const JOBMARKETPLACE_ABI = [
   {
+    inputs: [{ internalType: 'address', name: 'token_', type: 'address' }],
+    stateMutability: 'nonpayable',
     type: 'constructor',
-    stateMutability: 'nonpayable',
-    inputs: [{ name: 'token_', type: 'address' }],
   },
-
-  // Lecturas
+  { inputs: [], name: 'EvaluatorRequired', type: 'error' },
+  { inputs: [], name: 'InvalidJob', type: 'error' },
+  { inputs: [], name: 'InvalidState', type: 'error' },
+  { inputs: [], name: 'JobNotExpired', type: 'error' },
+  { inputs: [], name: 'NotClient', type: 'error' },
+  { inputs: [], name: 'NotEvaluator', type: 'error' },
+  { inputs: [], name: 'NotProvider', type: 'error' },
+  { inputs: [], name: 'ProviderAlreadySet', type: 'error' },
+  { inputs: [], name: 'ProviderRequired', type: 'error' },
+  { inputs: [], name: 'ReentrancyGuardReentrantCall', type: 'error' },
+  { inputs: [], name: 'ZeroBudget', type: 'error' },
   {
-    type: 'function',
-    name: 'token',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'address' }],
-  },
-  {
-    type: 'function',
-    name: 'jobCount',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    type: 'function',
-    name: 'jobs',
-    stateMutability: 'view',
-    inputs: [{ name: '', type: 'uint256' }],
-    outputs: [
-      { name: 'client', type: 'address' },
-      { name: 'evaluator', type: 'address' },
-      { name: 'provider', type: 'address' },
-      { name: 'budget', type: 'uint256' },
-      { name: 'expiresAt', type: 'uint64' },
-      { name: 'status', type: 'uint8' },
-      { name: 'deliverableRef', type: 'bytes32' },
-      { name: 'description', type: 'string' },
-    ],
-  },
-
-  // Escrituras
-  {
-    type: 'function',
-    name: 'createJob',
-    stateMutability: 'nonpayable',
+    anonymous: false,
     inputs: [
-      { name: 'description', type: 'string' },
-      { name: 'budget', type: 'uint256' },
-      { name: 'evaluator', type: 'address' },
-      { name: 'provider', type: 'address' },
-      { name: 'expiresAt', type: 'uint64' },
+      { indexed: true, internalType: 'uint256', name: 'jobId', type: 'uint256' },
+      { indexed: true, internalType: 'address', name: 'provider', type: 'address' },
+      { indexed: false, internalType: 'bytes32', name: 'reason', type: 'bytes32' },
     ],
-    outputs: [{ name: 'jobId', type: 'uint256' }],
-  },
-  {
-    type: 'function',
-    name: 'setProvider',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { name: 'jobId', type: 'uint256' },
-      { name: 'provider', type: 'address' },
-    ],
-    outputs: [],
-  },
-  {
-    type: 'function',
-    name: 'fund',
-    stateMutability: 'nonpayable',
-    inputs: [{ name: 'jobId', type: 'uint256' }],
-    outputs: [],
-  },
-  {
-    type: 'function',
-    name: 'submit',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { name: 'jobId', type: 'uint256' },
-      { name: 'deliverableRef', type: 'bytes32' },
-    ],
-    outputs: [],
-  },
-  {
-    type: 'function',
-    name: 'complete',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { name: 'jobId', type: 'uint256' },
-      { name: 'reason', type: 'bytes32' },
-    ],
-    outputs: [],
-  },
-  {
-    type: 'function',
-    name: 'reject',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { name: 'jobId', type: 'uint256' },
-      { name: 'reason', type: 'bytes32' },
-    ],
-    outputs: [],
-  },
-  {
-    type: 'function',
-    name: 'claimRefund',
-    stateMutability: 'nonpayable',
-    inputs: [{ name: 'jobId', type: 'uint256' }],
-    outputs: [],
-  },
-
-  // Eventos
-  {
-    type: 'event',
-    name: 'JobCreated',
-    inputs: [
-      { name: 'jobId', type: 'uint256', indexed: true },
-      { name: 'client', type: 'address', indexed: true },
-      { name: 'evaluator', type: 'address', indexed: true },
-      { name: 'provider', type: 'address', indexed: false },
-      { name: 'budget', type: 'uint256', indexed: false },
-      { name: 'expiresAt', type: 'uint64', indexed: false },
-      { name: 'description', type: 'string', indexed: false },
-    ],
-  },
-  {
-    type: 'event',
-    name: 'ProviderSet',
-    inputs: [
-      { name: 'jobId', type: 'uint256', indexed: true },
-      { name: 'provider', type: 'address', indexed: true },
-    ],
-  },
-  {
-    type: 'event',
-    name: 'JobFunded',
-    inputs: [
-      { name: 'jobId', type: 'uint256', indexed: true },
-      { name: 'amount', type: 'uint256', indexed: false },
-    ],
-  },
-  {
-    type: 'event',
-    name: 'Submitted',
-    inputs: [
-      { name: 'jobId', type: 'uint256', indexed: true },
-      { name: 'deliverableRef', type: 'bytes32', indexed: false },
-    ],
-  },
-  {
-    type: 'event',
     name: 'Completed',
-    inputs: [
-      { name: 'jobId', type: 'uint256', indexed: true },
-      { name: 'provider', type: 'address', indexed: true },
-      { name: 'reason', type: 'bytes32', indexed: false },
-    ],
+    type: 'event',
   },
   {
-    type: 'event',
-    name: 'Rejected',
+    anonymous: false,
     inputs: [
-      { name: 'jobId', type: 'uint256', indexed: true },
-      { name: 'reason', type: 'bytes32', indexed: false },
+      { indexed: true, internalType: 'uint256', name: 'jobId', type: 'uint256' },
+      { indexed: true, internalType: 'address', name: 'client', type: 'address' },
+      { indexed: true, internalType: 'address', name: 'evaluator', type: 'address' },
+      { indexed: false, internalType: 'address', name: 'provider', type: 'address' },
+      { indexed: false, internalType: 'uint256', name: 'budget', type: 'uint256' },
+      { indexed: false, internalType: 'uint64', name: 'expiresAt', type: 'uint64' },
+      { indexed: false, internalType: 'string', name: 'description', type: 'string' },
     ],
+    name: 'JobCreated',
+    type: 'event',
   },
   {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'uint256', name: 'jobId', type: 'uint256' },
+      { indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256' },
+    ],
+    name: 'JobFunded',
     type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'uint256', name: 'jobId', type: 'uint256' },
+      { indexed: true, internalType: 'address', name: 'provider', type: 'address' },
+    ],
+    name: 'ProviderSet',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'uint256', name: 'jobId', type: 'uint256' },
+      { indexed: true, internalType: 'address', name: 'client', type: 'address' },
+      { indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256' },
+    ],
     name: 'Refunded',
-    inputs: [
-      { name: 'jobId', type: 'uint256', indexed: true },
-      { name: 'client', type: 'address', indexed: true },
-      { name: 'amount', type: 'uint256', indexed: false },
-    ],
+    type: 'event',
   },
-
-  // Custom errors
-  { type: 'error', name: 'NotClient', inputs: [] },
-  { type: 'error', name: 'NotEvaluator', inputs: [] },
-  { type: 'error', name: 'NotProvider', inputs: [] },
-  { type: 'error', name: 'EvaluatorRequired', inputs: [] },
-  { type: 'error', name: 'ProviderRequired', inputs: [] },
-  { type: 'error', name: 'ProviderAlreadySet', inputs: [] },
-  { type: 'error', name: 'InvalidState', inputs: [] },
-  { type: 'error', name: 'JobNotExpired', inputs: [] },
-  { type: 'error', name: 'ZeroBudget', inputs: [] },
-  { type: 'error', name: 'InvalidJob', inputs: [] },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'uint256', name: 'jobId', type: 'uint256' },
+      { indexed: false, internalType: 'bytes32', name: 'reason', type: 'bytes32' },
+    ],
+    name: 'Rejected',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'uint256', name: 'jobId', type: 'uint256' },
+      { indexed: false, internalType: 'bytes32', name: 'deliverableRef', type: 'bytes32' },
+    ],
+    name: 'Submitted',
+    type: 'event',
+  },
+  {
+    inputs: [{ internalType: 'uint256', name: 'jobId', type: 'uint256' }],
+    name: 'claimRefund',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'uint256', name: 'jobId', type: 'uint256' },
+      { internalType: 'bytes32', name: 'reason', type: 'bytes32' },
+    ],
+    name: 'complete',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'string', name: 'description', type: 'string' },
+      { internalType: 'uint256', name: 'budget', type: 'uint256' },
+      { internalType: 'address', name: 'evaluator', type: 'address' },
+      { internalType: 'address', name: 'provider', type: 'address' },
+      { internalType: 'uint64', name: 'expiresAt', type: 'uint64' },
+    ],
+    name: 'createJob',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'uint256', name: 'jobId', type: 'uint256' }],
+    name: 'fund',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'jobCount',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    name: 'jobs',
+    outputs: [
+      { internalType: 'address', name: 'client', type: 'address' },
+      { internalType: 'address', name: 'evaluator', type: 'address' },
+      { internalType: 'address', name: 'provider', type: 'address' },
+      { internalType: 'uint256', name: 'budget', type: 'uint256' },
+      { internalType: 'uint64', name: 'expiresAt', type: 'uint64' },
+      { internalType: 'enum JobMarketplace.Status', name: 'status', type: 'uint8' },
+      { internalType: 'bytes32', name: 'deliverableRef', type: 'bytes32' },
+      { internalType: 'string', name: 'description', type: 'string' },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'uint256', name: 'jobId', type: 'uint256' },
+      { internalType: 'bytes32', name: 'reason', type: 'bytes32' },
+    ],
+    name: 'reject',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'uint256', name: 'jobId', type: 'uint256' },
+      { internalType: 'address', name: 'provider', type: 'address' },
+    ],
+    name: 'setProvider',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'uint256', name: 'jobId', type: 'uint256' },
+      { internalType: 'bytes32', name: 'deliverableRef', type: 'bytes32' },
+    ],
+    name: 'submit',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'token',
+    outputs: [{ internalType: 'contract IERC20', name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
 ] as const;
