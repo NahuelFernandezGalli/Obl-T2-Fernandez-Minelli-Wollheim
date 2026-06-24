@@ -82,20 +82,66 @@ contract JobMarketplace is ReentrancyGuard {
         return jobs[jobId];
     }
 
-    function fund(uint256 jobId) external {
-        revert InvalidState();
+    function fund(uint256 jobId) external nonReentrant {
+        Job storage job = _job(jobId);
+        if (msg.sender != job.client) revert NotClient();
+        if (job.status != Status.Open) revert InvalidState();
+        if (job.provider == address(0)) revert ProviderRequired();
+
+        uint256 amount = job.budget;
+        job.status = Status.Funded;
+
+        token.transferFrom(msg.sender, address(this), amount);
+        emit JobFunded(jobId, amount);
     }
 
     function submit(uint256 jobId, bytes32 deliverableRef) external {
-        revert InvalidState();
+        Job storage job = _job(jobId);
+        if (msg.sender != job.provider) revert NotProvider();
+        if (job.status != Status.Funded) revert InvalidState();
+
+        job.status = Status.Submitted;
+        job.deliverableRef = deliverableRef;
+
+        emit Submitted(jobId, deliverableRef);
     }
 
-    function complete(uint256 jobId, bytes32 reason) external {
-        revert InvalidState();
+    function complete(uint256 jobId, bytes32 reason) external nonReentrant {
+        Job storage job = _job(jobId);
+        if (msg.sender != job.evaluator) revert NotEvaluator();
+        if (job.status != Status.Submitted) revert InvalidState();
+
+        address provider = job.provider;
+        uint256 amount = job.budget;
+        job.status = Status.Completed;
+
+        token.transfer(provider, amount);
+        emit Completed(jobId, provider, reason);
     }
 
-    function reject(uint256 jobId, bytes32 reason) external {
-        revert InvalidState();
+    function reject(uint256 jobId, bytes32 reason) external nonReentrant {
+        Job storage job = _job(jobId);
+        Status status = job.status;
+
+        if (status == Status.Open) {
+            if (msg.sender != job.client) revert NotClient();
+        } else if (status == Status.Funded || status == Status.Submitted) {
+            if (msg.sender != job.evaluator) revert NotEvaluator();
+        } else {
+            revert InvalidState();
+        }
+
+        address client = job.client;
+        uint256 amount = job.budget;
+        bool wasFunded = (status == Status.Funded || status == Status.Submitted);
+        job.status = Status.Rejected;
+
+        emit Rejected(jobId, reason);
+
+        if (wasFunded) {
+            token.transfer(client, amount);
+            emit Refunded(jobId, client, amount);
+        }
     }
 
     function claimRefund(uint256 jobId) external {
