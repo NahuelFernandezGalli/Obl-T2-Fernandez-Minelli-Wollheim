@@ -1,0 +1,54 @@
+# Node modules
+/node_modules
+/frontend/node_modules
+/frontend/dist
+
+# Compilation output
+/dist
+
+# pnpm deploy output
+/bundle
+
+# Hardhat build artifacts
+/artifacts
+
+# Hardhat compilation (v2) support directory
+/cache
+
+# Ignition deployment local state (mantener deployed_addresses.json si se quiere versionar)
+/ignition/deployments/*/journal.jsonl
+
+# Typechain output
+/types
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Hardhat coverage reports
+/coverage
+
+# Gas snapshot files
+/.gas-snapshot
+
+# Snapshot cheatcodes output
+/snapshots
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code / agents
+CLAUDE.md
+AGENTS.md
+/.claude
+/.agents
