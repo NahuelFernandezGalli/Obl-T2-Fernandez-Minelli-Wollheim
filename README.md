@@ -168,3 +168,24 @@ de acceso (la puede llamar cualquiera). Al ejecutarla, se reembolsa al cliente y
 **Expirado**.
 
 ![Trabajo expirado con la acción de reclamar reembolso](docs/detalle-expirado.png)
+
+### MultiSig como evaluador (flujo end-to-end)
+
+Cuando el evaluador de un trabajo es un contrato MultiSig, la aprobación no se hace desde esta UI:
+hay que crear una propuesta en el MultiSig que llame a `complete()`, y aprobarla con M de N signers.
+
+**1. Trabajo con el MultiSig como evaluador.** El trabajo #6 tiene como evaluador la dirección del
+MultiSig; el panel de acciones indica que la aprobación va por una propuesta del MultiSig.
+
+![Detalle de trabajo con MultiSig como evaluador](docs/multisig-job-detail.png)
+
+**2. Creación de la propuesta.** En la interfaz del MultiSig se crea una propuesta con
+`target` = JobMarketplace, `value` = 0 y la `calldata` de `complete(jobId, reason)`.
+
+![Nueva propuesta en el MultiSig con la calldata de complete()](docs/multisig-proponer.png)
+
+**3. Consenso M-de-N.** La propuesta requiere 2 de 3 aprobaciones (threshold). Recién al alcanzar el
+threshold se puede ejecutar; al ejecutar, el MultiSig llama a `complete()` y se libera el pago al
+proveedor — el trabajo pasa a `Completed`.
+
+![Propuesta del MultiSig pendiente de alcanzar el threshold](docs/multisig-propuesta.png)

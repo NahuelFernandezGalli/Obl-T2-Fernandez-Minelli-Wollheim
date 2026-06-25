@@ -20,7 +20,6 @@ function reasonToBytes32(reason: string): Hex {
 
 /**
  * Ejecuta una escritura, espera la confirmación de la tx y al confirmar invalida las queries
- * (para que el estado se actualice sin recargar — requisito de UX de la consigna).
  * `onConfirmed` se dispara recién cuando la tx queda minada.
  */
 function useAction() {
