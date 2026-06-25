@@ -184,8 +184,15 @@ MultiSig; el panel de acciones indica que la aprobación va por una propuesta de
 
 ![Nueva propuesta en el MultiSig con la calldata de complete()](docs/multisig-proponer.png)
 
-**3. Consenso M-de-N.** La propuesta requiere 2 de 3 aprobaciones (threshold). Recién al alcanzar el
-threshold se puede ejecutar; al ejecutar, el MultiSig llama a `complete()` y se libera el pago al
-proveedor — el trabajo pasa a `Completed`.
+**3. Consenso M-de-N.** La propuesta requiere 2 de 3 aprobaciones (threshold). Un solo signer no
+alcanza: hace falta una segunda aprobación de otro signer.
 
 ![Propuesta del MultiSig pendiente de alcanzar el threshold](docs/multisig-propuesta.png)
+
+**4. Ejecución y pago liberado.** Con la segunda aprobación la propuesta llega a **2/2** y se
+**ejecuta**: el MultiSig llama a `complete()`, el trabajo #6 pasa a **Completado** y los 60 JTK se
+liberan al proveedor. Esto demuestra que el pago solo se libera tras el consenso del comité.
+
+![Propuesta del MultiSig ejecutada con 2/2 aprobaciones](docs/multisig-ejecutada.png)
+
+![Trabajo #6 completado tras el consenso del MultiSig](docs/multisig-completado.png)
