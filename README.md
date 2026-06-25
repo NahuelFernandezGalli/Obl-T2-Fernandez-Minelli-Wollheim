@@ -111,7 +111,52 @@ La referencia a la entrega se almacena como `bytes32`, manteniendo el contrato a
 
 El contenido del deliverable se guarda **off-chain** de forma híbrida, según haya o no IPFS configurado:
 
-- **Sin IPFS (default):** `deliverableRef = keccak256(contenido)` y el contenido queda en `localStorage`. Es suficiente para la entrega, con la limitación de que el evaluador debe abrir la app en el mismo navegador donde se hizo la entrega.
+- **Sin IPFS (default):** `deliverableRef = keccak256(contenido)` y el contenido queda en `localStorage`. Con la limitación de que el evaluador debe abrir la app en el mismo navegador donde se hizo la entrega.
 - **Con IPFS (bonus):** si se setea `VITE_PINATA_JWT`, al enviar la entrega el contenido se sube a IPFS vía Pinata y `deliverableRef` pasa a ser el **CID** del archivo. Como un CIDv0 es un multihash sha2-256 de 34 bytes (`0x12 0x20` + digest de 32 bytes), guardamos solo el digest de 32 bytes en el `bytes32` y reconstruimos el CID al leer. Así cualquier evaluador accede al deliverable **desde cualquier dispositivo**, alineado con el espíritu descentralizado del protocolo.
 
 En ambos casos se guarda una copia local como caché. Al leer, la app intenta primero el caché local y, si no está, reconstruye el CID y lo trae desde el gateway IPFS. El contrato no cambia entre un modo y otro: siempre recibe un `bytes32`.
+
+## Capturas de la app
+
+### Tablero — listado de trabajos por eventos `JobCreated`
+
+El tablero lista todos los trabajos leyendo los eventos `JobCreated` del contrato, mostrando el
+badge de estado en vivo de cada uno (Abierto / Fondeado / Rechazado / Completado / Expirado).
+
+![Tablero con trabajos en distintos estados](docs/tablero.png)
+
+### Detalle de trabajo — panel del proveedor (entrega vía IPFS)
+
+El trabajo en estado `Funded` y la wallet conectada es el proveedor: aparece el formulario de
+entrega, que sube el contenido a IPFS (`se sube a IPFS`) y manda on-chain solo el `bytes32`.
+
+![Detalle de trabajo con envío de entrega a IPFS](docs/detalle-entrega-ipfs.png)
+
+### Detalle de trabajo — panel de acciones según rol
+
+El mismo trabajo desde una wallet que no tiene un rol accionable en ese estado: el panel muestra
+"No tenés acciones disponibles", evidenciando el control de acceso por rol en la UI.
+
+![Detalle de trabajo sin acciones para la wallet conectada](docs/detalle-roles.png)
+
+### Detalle de trabajo — panel del cliente en estado `Open`
+
+Trabajo en `Open` sin proveedor, visto por el cliente: el panel ofrece **Asignar proveedor**,
+**Fondear** (approve → fund) y **Rechazar**.
+
+![Panel del cliente para un trabajo en Open](docs/detalle-open-cliente.png)
+
+### Trabajo completado — ciclo completo
+
+Happy path cerrado: el evaluador aprobó la entrega y se liberó el pago al proveedor. El trabajo
+queda en estado **Completado**.
+
+![Trabajo en estado Completado](docs/detalle-completado.png)
+
+### Expiración — `claimRefund` tras el vencimiento
+
+Trabajo `Funded` cuyo `expiresAt` ya pasó: aparece **Reclamar reembolso**, una acción sin control
+de acceso (la puede llamar cualquiera). Al ejecutarla, se reembolsa al cliente y el trabajo pasa a
+**Expirado**.
+
+![Trabajo expirado con la acción de reclamar reembolso](docs/detalle-expirado.png)
