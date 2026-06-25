@@ -33,11 +33,14 @@ export function PostJob() {
     e.preventDefault();
     setError('');
 
-    if (!isAddress(evaluator)) {
+    const evaluatorAddr = evaluator.trim();
+    const providerInput = provider.trim();
+
+    if (!isAddress(evaluatorAddr)) {
       setError('Dirección del evaluador inválida.');
       return;
     }
-    if (provider.trim() !== '' && !isAddress(provider)) {
+    if (providerInput !== '' && !isAddress(providerInput)) {
       setError('Dirección del proveedor inválida.');
       return;
     }
@@ -60,14 +63,14 @@ export function PostJob() {
       return;
     }
 
-    const providerArg = (provider.trim() === '' ? ZERO_ADDRESS : provider) as Address;
+    const providerArg = (providerInput === '' ? ZERO_ADDRESS : providerInput) as Address;
 
     writeContract(
       {
         address: JOBMARKETPLACE_ADDRESS,
         abi: JOBMARKETPLACE_ABI,
         functionName: 'createJob',
-        args: [description, parsedBudget, evaluator as Address, providerArg, expiresUnix],
+        args: [description, parsedBudget, evaluatorAddr as Address, providerArg, expiresUnix],
       },
       {
         onSuccess: (txHash) => setHash(txHash),

@@ -72,8 +72,8 @@ export function SetProviderAction({ jobId }: { jobId: bigint }) {
       </label>
       <div className="actions">
         <button
-          disabled={isPending || !isAddress(provider)}
-          onClick={() => run(mkt('setProvider', [jobId, provider as Address]), () => setProvider(''))}
+          disabled={isPending || !isAddress(provider.trim())}
+          onClick={() => run(mkt('setProvider', [jobId, provider.trim() as Address]), () => setProvider(''))}
         >
           {isPending ? 'Enviando…' : 'Asignar proveedor'}
         </button>
