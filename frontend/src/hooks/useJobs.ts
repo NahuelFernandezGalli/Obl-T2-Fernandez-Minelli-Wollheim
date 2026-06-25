@@ -1,7 +1,10 @@
 import { useReadContract, usePublicClient } from 'wagmi';
 import { useQuery } from '@tanstack/react-query';
 import { type Address, type Hex } from 'viem';
-import { JOBMARKETPLACE_ADDRESS, JOBMARKETPLACE_ABI } from '../config/marketplace';
+import { JOBMARKETPLACE_ADDRESS, JOBMARKETPLACE_ABI, JOBMARKETPLACE_DEPLOY_BLOCK } from '../config/marketplace';
+
+// Tamaño de tramo para getLogs. Muchos RPC limitan el rango de bloques por consulta.
+const LOG_CHUNK = 10000n;
 
 const REFETCH = { refetchInterval: 4000 } as const;
 
@@ -47,13 +50,21 @@ export function useJobCreatedEvents() {
     refetchInterval: 8000,
     queryFn: async (): Promise<JobCreatedSummary[]> => {
       if (!client) return [];
-      const logs = await client.getContractEvents({
-        address: JOBMARKETPLACE_ADDRESS,
-        abi: JOBMARKETPLACE_ABI,
-        eventName: 'JobCreated',
-        fromBlock: 0n,
-        toBlock: 'latest',
-      });
+
+      const latest = await client.getBlockNumber();
+      const logs = [];
+      // Leemos en tramos desde el bloque de deploy hasta el último bloque.
+      for (let from = JOBMARKETPLACE_DEPLOY_BLOCK; from <= latest; from += LOG_CHUNK) {
+        const to = from + LOG_CHUNK - 1n > latest ? latest : from + LOG_CHUNK - 1n;
+        const chunk = await client.getContractEvents({
+          address: JOBMARKETPLACE_ADDRESS,
+          abi: JOBMARKETPLACE_ABI,
+          eventName: 'JobCreated',
+          fromBlock: from,
+          toBlock: to,
+        });
+        logs.push(...chunk);
+      }
 
       return logs
         .map((log) => ({
