@@ -1,19 +1,26 @@
 import { Link } from 'react-router-dom';
-import { useJobCount, useJob } from '../hooks/useJobs';
+import { useJobCreatedEvents, useJob, type JobCreatedSummary } from '../hooks/useJobs';
 import { useTokenMeta } from '../hooks/useToken';
 import { formatAddress, formatAmount, statusLabel, statusClass } from '../lib/format';
 
 export function JobBoard() {
-  const { data: count, isLoading } = useJobCount();
+  const { data: jobs, isLoading, isError } = useJobCreatedEvents();
   const { data: token } = useTokenMeta();
 
-  if (isLoading || count === undefined) {
+  if (isLoading) {
     return <p className="muted">Cargando trabajos…</p>;
   }
 
-  const total = Number(count);
+  if (isError) {
+    return (
+      <div className="panel">
+        <h2>Tablero de trabajos</h2>
+        <p className="error">No se pudieron leer los eventos. ¿Está configurada la dirección del contrato?</p>
+      </div>
+    );
+  }
 
-  if (total === 0) {
+  if (!jobs || jobs.length === 0) {
     return (
       <div className="panel">
         <h2>Tablero de trabajos</h2>
@@ -23,14 +30,12 @@ export function JobBoard() {
     );
   }
 
-  const ids = Array.from({ length: total }, (_, i) => total - 1 - i); // nuevos primero
-
   return (
     <section>
       <h2>Tablero de trabajos</h2>
       <div className="job-list">
-        {ids.map((id) => (
-          <JobCard key={id} jobId={BigInt(id)} decimals={token?.decimals} symbol={token?.symbol} />
+        {jobs.map((job) => (
+          <JobCard key={job.jobId.toString()} job={job} decimals={token?.decimals} symbol={token?.symbol} />
         ))}
       </div>
     </section>
@@ -38,29 +43,27 @@ export function JobBoard() {
 }
 
 function JobCard({
-  jobId,
+  job,
   decimals,
   symbol,
 }: {
-  jobId: bigint;
+  job: JobCreatedSummary;
   decimals?: number;
   symbol?: string;
 }) {
-  const { data: job } = useJob(jobId);
-
-  if (!job) {
-    return (
-      <div className="job-card">
-        <span className="muted">Cargando #{jobId.toString()}…</span>
-      </div>
-    );
-  }
+  // Datos de la tarjeta vienen del evento JobCreated; el badge de estado es lectura viva.
+  const { data: live } = useJob(job.jobId);
+  const status = live?.status;
 
   return (
-    <Link to={`/job/${jobId.toString()}`} className="job-card">
+    <Link to={`/job/${job.jobId.toString()}`} className="job-card">
       <div className="job-card-header">
-        <span className="job-id">#{jobId.toString()}</span>
-        <span className={`status-badge ${statusClass(job.status)}`}>{statusLabel(job.status)}</span>
+        <span className="job-id">#{job.jobId.toString()}</span>
+        {status !== undefined ? (
+          <span className={`status-badge ${statusClass(status)}`}>{statusLabel(status)}</span>
+        ) : (
+          <span className="status-badge muted">…</span>
+        )}
       </div>
       <span className="job-desc">{job.description || '(sin descripción)'}</span>
       <span className="muted">

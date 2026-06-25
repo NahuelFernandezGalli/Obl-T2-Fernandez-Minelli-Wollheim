@@ -1,4 +1,5 @@
-import { useReadContract } from 'wagmi';
+import { useReadContract, usePublicClient } from 'wagmi';
+import { useQuery } from '@tanstack/react-query';
 import { type Address, type Hex } from 'viem';
 import { JOBMARKETPLACE_ADDRESS, JOBMARKETPLACE_ABI } from '../config/marketplace';
 
@@ -15,13 +16,54 @@ export interface Job {
   description: string;
 }
 
-/** Cantidad total de trabajos. El Tablero itera de 0..jobCount-1. */
+/** Datos estáticos de un trabajo tal como salieron del evento JobCreated. */
+export interface JobCreatedSummary {
+  jobId: bigint;
+  client: Address;
+  budget: bigint;
+  description: string;
+}
+
+/** Cantidad total de trabajos (lectura directa del contador del contrato). */
 export function useJobCount() {
   return useReadContract({
     address: JOBMARKETPLACE_ADDRESS,
     abi: JOBMARKETPLACE_ABI,
     functionName: 'jobCount',
     query: REFETCH,
+  });
+}
+
+/**
+ * Lista todos los trabajos leyendo los eventos `JobCreated` (como pide la consigna).
+ * Los eventos dan los datos de creación; el estado vivo de cada job se lee aparte con `useJob`.
+ */
+export function useJobCreatedEvents() {
+  const client = usePublicClient();
+
+  return useQuery({
+    queryKey: ['jobCreatedEvents', JOBMARKETPLACE_ADDRESS],
+    enabled: Boolean(client),
+    refetchInterval: 8000,
+    queryFn: async (): Promise<JobCreatedSummary[]> => {
+      if (!client) return [];
+      const logs = await client.getContractEvents({
+        address: JOBMARKETPLACE_ADDRESS,
+        abi: JOBMARKETPLACE_ABI,
+        eventName: 'JobCreated',
+        fromBlock: 0n,
+        toBlock: 'latest',
+      });
+
+      return logs
+        .map((log) => ({
+          jobId: log.args.jobId as bigint,
+          client: log.args.client as Address,
+          budget: log.args.budget as bigint,
+          description: log.args.description as string,
+        }))
+        .sort((a, b) => (a.jobId < b.jobId ? 1 : -1)); // más nuevos primero
+    },
   });
 }
 
