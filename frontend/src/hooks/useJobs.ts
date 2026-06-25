@@ -1,10 +1,6 @@
-import { useReadContract, usePublicClient } from 'wagmi';
-import { useQuery } from '@tanstack/react-query';
+import { useReadContract } from 'wagmi';
 import { type Address, type Hex } from 'viem';
-import { JOBMARKETPLACE_ADDRESS, JOBMARKETPLACE_ABI, JOBMARKETPLACE_DEPLOY_BLOCK } from '../config/marketplace';
-
-// Tamaño de tramo para getLogs. Muchos RPC limitan el rango de bloques por consulta.
-const LOG_CHUNK = 10000n;
+import { JOBMARKETPLACE_ADDRESS, JOBMARKETPLACE_ABI } from '../config/marketplace';
 
 const REFETCH = { refetchInterval: 4000 } as const;
 
@@ -19,62 +15,18 @@ export interface Job {
   description: string;
 }
 
-/** Datos estáticos de un trabajo tal como salieron del evento JobCreated. */
-export interface JobCreatedSummary {
-  jobId: bigint;
-  client: Address;
-  budget: bigint;
-  description: string;
-}
-
-/** Cantidad total de trabajos (lectura directa del contador del contrato). */
+/**
+ * Cantidad total de trabajos (lectura directa del contador del contrato).
+ * El tablero itera de 0..jobCount-1 y lee cada trabajo con `useJob`.
+ * (Listamos con los getters `jobCount`/`jobs` en vez de eventos `JobCreated` porque los RPC de
+ * tier gratis limitan el rango de `eth_getLogs` —Alchemy a 10 bloques—; ver README.)
+ */
 export function useJobCount() {
   return useReadContract({
     address: JOBMARKETPLACE_ADDRESS,
     abi: JOBMARKETPLACE_ABI,
     functionName: 'jobCount',
     query: REFETCH,
-  });
-}
-
-/**
- * Lista todos los trabajos leyendo los eventos `JobCreated` (como pide la consigna).
- * Los eventos dan los datos de creación; el estado vivo de cada job se lee aparte con `useJob`.
- */
-export function useJobCreatedEvents() {
-  const client = usePublicClient();
-
-  return useQuery({
-    queryKey: ['jobCreatedEvents', JOBMARKETPLACE_ADDRESS],
-    enabled: Boolean(client),
-    refetchInterval: 8000,
-    queryFn: async (): Promise<JobCreatedSummary[]> => {
-      if (!client) return [];
-
-      const latest = await client.getBlockNumber();
-      const logs = [];
-      // Leemos en tramos desde el bloque de deploy hasta el último bloque.
-      for (let from = JOBMARKETPLACE_DEPLOY_BLOCK; from <= latest; from += LOG_CHUNK) {
-        const to = from + LOG_CHUNK - 1n > latest ? latest : from + LOG_CHUNK - 1n;
-        const chunk = await client.getContractEvents({
-          address: JOBMARKETPLACE_ADDRESS,
-          abi: JOBMARKETPLACE_ABI,
-          eventName: 'JobCreated',
-          fromBlock: from,
-          toBlock: to,
-        });
-        logs.push(...chunk);
-      }
-
-      return logs
-        .map((log) => ({
-          jobId: log.args.jobId as bigint,
-          client: log.args.client as Address,
-          budget: log.args.budget as bigint,
-          description: log.args.description as string,
-        }))
-        .sort((a, b) => (a.jobId < b.jobId ? 1 : -1)); // más nuevos primero
-    },
   });
 }
 

@@ -74,7 +74,7 @@ Variables de entorno (`frontend/.env.local`):
 |---|---|---|
 | `VITE_WALLETCONNECT_PROJECT_ID` | sí | Project ID de WalletConnect Cloud (RainbowKit). |
 | `VITE_JOBMARKETPLACE_ADDRESS` | sí | Dirección del `JobMarketplace` en Sepolia. |
-| `VITE_JOBMARKETPLACE_DEPLOY_BLOCK` | no | Bloque de deploy; evita escanear toda la cadena al leer eventos `JobCreated`. |
+| `VITE_SEPOLIA_RPC_URL` | recomendada | RPC de lectura. Conviene tu endpoint de Alchemy (el del deploy); el público por defecto limita las consultas. Si no se setea, usa un fallback público. |
 | `VITE_PINATA_JWT` | no | JWT de Pinata. Si se setea, los deliverables se suben a IPFS (ver decisiones de diseño). |
 | `VITE_IPFS_GATEWAY` | no | Gateway IPFS de lectura (default `https://gateway.pinata.cloud/ipfs/`). |
 
@@ -122,14 +122,14 @@ En ambos casos se guarda una copia local como caché. Al leer, la app intenta pr
 
 - **Aprobación vía MultiSig desde su propia interfaz.** Cuando el evaluador de un trabajo es un contrato MultiSig, la aprobación (`complete`) no se dispara desde esta UI sino desde la interfaz del MultiSig: un signer crea una propuesta que llama a `complete(jobId, reason)` del marketplace y, al alcanzar el threshold, se ejecuta. No es un desvío de la especificación —la Parte B solo exige "Aprobar = `complete()`" para un evaluador EOA, y el caso MultiSig surge naturalmente del protocolo (está cubierto en los tests)— pero se documenta como limitación de la UI. La pantalla de detalle muestra una nota indicándolo.
 - **Deliverable en localStorage sin IPFS.** Si no se configura `VITE_PINATA_JWT`, el contenido del deliverable queda en el `localStorage` del navegador del proveedor, por lo que el evaluador debe abrir la app en el mismo navegador para verlo. El bonus de IPFS (configurando el JWT) elimina esta limitación. Ver [Almacenamiento del deliverable](#almacenamiento-del-deliverable-localstorage--ipfs-híbrido-bonus).
-- **Listado del tablero por eventos.** El tablero descubre los trabajos leyendo los eventos `JobCreated` desde el bloque de deploy (`VITE_JOBMARKETPLACE_DEPLOY_BLOCK`) en tramos, y lee el estado vivo de cada uno con `jobs(id)`. Arrancar la lectura de eventos en el bloque de deploy evita que el RPC rechace el rango por escanear toda la cadena.
+- **Listado del tablero por `jobCount`/`jobs` (no por eventos).** El contrato **emite** los eventos `JobCreated` (verificable en Etherscan), pero el tablero descubre los trabajos con los getters `jobCount()` y `jobs(id)` en lugar de `eth_getLogs`. Motivo: los RPC de tier gratis limitan fuertemente el rango de `eth_getLogs` (Alchemy free permite solo 10 bloques por consulta), lo que vuelve impracticable el escaneo de eventos sin un RPC pago o un indexer. Las lecturas con getters no tienen ese límite y dan el mismo resultado. Para que las múltiples lecturas sean fluidas, se recomienda configurar `VITE_SEPOLIA_RPC_URL` con un endpoint propio (Alchemy).
 
 ## Capturas de la app
 
-### Tablero — listado de trabajos por eventos `JobCreated`
+### Tablero — listado de trabajos
 
-El tablero lista todos los trabajos leyendo los eventos `JobCreated` del contrato, mostrando el
-badge de estado en vivo de cada uno (Abierto / Fondeado / Rechazado / Completado / Expirado).
+El tablero lista todos los trabajos (vía `jobCount`/`jobs`) mostrando el badge de estado en vivo de
+cada uno (Abierto / Fondeado / Rechazado / Completado / Expirado).
 
 ![Tablero con trabajos en distintos estados](docs/tablero.png)
 

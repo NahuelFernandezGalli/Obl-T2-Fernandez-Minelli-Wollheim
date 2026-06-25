@@ -7,13 +7,6 @@ export const JOBMARKETPLACE_ADDRESS = (import.meta.env.VITE_JOBMARKETPLACE_ADDRE
 
 export const ZERO_ADDRESS: Address = '0x0000000000000000000000000000000000000000';
 
-// Bloque en el que se desplegó el JobMarketplace. Se usa como `fromBlock` al leer eventos:
-// arrancar en 0 hace que el RPC escanee toda la cadena y rechace la consulta.
-// Si se redespliega el contrato, actualizar este valor (o VITE_JOBMARKETPLACE_DEPLOY_BLOCK).
-export const JOBMARKETPLACE_DEPLOY_BLOCK = BigInt(
-  import.meta.env.VITE_JOBMARKETPLACE_DEPLOY_BLOCK ?? '11137384',
-);
-
 // Estados del Job - coincide con el enum Status del contrato.
 export const JobStatus = {
   Open: 0,
