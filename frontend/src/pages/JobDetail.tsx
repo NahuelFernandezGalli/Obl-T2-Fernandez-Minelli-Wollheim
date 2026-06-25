@@ -1,10 +1,11 @@
 import { useParams, Link } from 'react-router-dom';
 import { useAccount } from 'wagmi';
-import { type Address } from 'viem';
+import { type Address, type Hex } from 'viem';
 import { useJob, type Job } from '../hooks/useJobs';
 import { useTokenMeta, type TokenMeta } from '../hooks/useToken';
 import { JobStatus, ZERO_ADDRESS } from '../config/marketplace';
 import { formatAddress, formatAmount, statusLabel, statusClass, formatExpiry, isExpired } from '../lib/format';
+import { loadDeliverable, isZeroRef } from '../lib/deliverable';
 import {
   SetProviderAction,
   FundAction,
@@ -52,8 +53,38 @@ export function JobDetail() {
         </dl>
       </div>
 
+      <DeliverablePanel deliverableRef={job.deliverableRef} />
+
       <ActionPanel jobId={jobId} job={job} token={token} account={address} />
     </section>
+  );
+}
+
+/**
+ * Muestra el contenido del entregable (off-chain, en localStorage de este navegador).
+ * On-chain solo está el hash `deliverableRef`; el evaluador necesita ver el contenido para decidir.
+ */
+function DeliverablePanel({ deliverableRef }: { deliverableRef: Hex }) {
+  if (isZeroRef(deliverableRef)) return null;
+
+  const content = loadDeliverable(deliverableRef);
+
+  return (
+    <div className="panel">
+      <h2>Entregable</h2>
+      <dl>
+        <dt>Referencia (on-chain)</dt>
+        <dd><code>{deliverableRef}</code></dd>
+      </dl>
+      {content !== null ? (
+        <pre className="deliverable-content">{content}</pre>
+      ) : (
+        <p className="muted">
+          El contenido no está en este navegador. El proveedor lo guardó localmente; para revisarlo,
+          el evaluador debe abrir la app en el mismo navegador donde se hizo la entrega.
+        </p>
+      )}
+    </div>
   );
 }
 
