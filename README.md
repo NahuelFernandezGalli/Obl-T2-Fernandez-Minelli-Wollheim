@@ -52,8 +52,8 @@ npx hardhat ignition deploy ignition/modules/JobMarketplace.ts --network sepolia
 
 | Contrato | Red | Dirección |
 |---|---|---|
-| `MockERC20` | Sepolia | _pendiente de deploy_ |
-| `JobMarketplace` | Sepolia | _pendiente de deploy_ |
+| `MockERC20` | Sepolia | 0xe8868Aa427003Ff4dEC892176899b53a59e2bf31 |
+| `JobMarketplace` | Sepolia | 0x80B0f6Fb5672020171CA6a77b390fBE2238FEfcb |
 
 ## Decisiones de diseño
 
@@ -69,7 +69,7 @@ Funded/Submitted → (claimRefund, post-expiresAt) → Expired
 
 ### Patrón CEI + ReentrancyGuard
 
-Las funciones `fund`, `complete`, `reject` y `claimRefund` siguen el patrón Checks-Effects-Interactions y están protegidas con `ReentrancyGuard` de OpenZeppelin para prevenir ataques de reentrada.
+Las funciones fund, complete y reject siguen el patrón Checks-Effects-Interactions y están protegidas con ReentrancyGuard de OpenZeppelin. claimRefund también sigue CEI pero deliberadamente NO lleva ReentrancyGuard ni control de acceso
 
 ### `expiresAt` en lugar de duración
 
