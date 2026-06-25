@@ -7,7 +7,8 @@ import { ERC20_ABI } from '../config/erc20';
 import type { Job } from '../hooks/useJobs';
 import type { TokenMeta } from '../hooks/useToken';
 import { useTokenAllowance } from '../hooks/useToken';
-import { saveDeliverable } from '../lib/deliverable';
+import { storeDeliverable } from '../lib/deliverable';
+import { isIpfsEnabled } from '../lib/ipfs';
 import { decodeRevert } from '../lib/errors';
 
 const ZERO_BYTES32: Hex = `0x${'0'.repeat(64)}`;
@@ -134,22 +135,30 @@ export function FundAction({
 
 export function SubmitAction({ jobId }: { jobId: bigint }) {
   const [content, setContent] = useState('');
+  const [uploading, setUploading] = useState(false);
   const { run, isPending, error } = useAction();
 
-  function handleSubmit() {
-    const ref = saveDeliverable(content);
-    run(mkt('submit', [jobId, ref]), () => setContent(''));
+  async function handleSubmit() {
+    setUploading(true);
+    try {
+      const ref = await storeDeliverable(content); // sube off-chain, manda solo el ref
+      run(mkt('submit', [jobId, ref]), () => setContent(''));
+    } finally {
+      setUploading(false);
+    }
   }
+
+  const busy = uploading || isPending;
 
   return (
     <div>
       <label className="form" style={{ marginBottom: '0.5rem' }}>
-        Entregable (se guarda en este navegador; on-chain viaja solo el hash)
+        Entregable ({isIpfsEnabled() ? 'se sube a IPFS' : 'se guarda en este navegador'}; on-chain viaja solo el ref)
         <textarea rows={4} value={content} onChange={(e) => setContent(e.target.value)} />
       </label>
       <div className="actions">
-        <button disabled={isPending || content.trim() === ''} onClick={handleSubmit}>
-          {isPending ? 'Enviando…' : 'Enviar entrega'}
+        <button disabled={busy || content.trim() === ''} onClick={handleSubmit}>
+          {uploading ? 'Subiendo…' : isPending ? 'Enviando…' : 'Enviar entrega'}
         </button>
       </div>
       {error && <p className="error">{error}</p>}

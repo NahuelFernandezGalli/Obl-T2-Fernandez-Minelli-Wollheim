@@ -55,6 +55,30 @@ npx hardhat ignition deploy ignition/modules/JobMarketplace.ts --network sepolia
 | `MockERC20` | Sepolia | 0xe8868Aa427003Ff4dEC892176899b53a59e2bf31 |
 | `JobMarketplace` | Sepolia | 0x80B0f6Fb5672020171CA6a77b390fBE2238FEfcb |
 
+## Frontend
+
+El frontend (Vite + React + RainbowKit + wagmi + viem) está en `frontend/`.
+
+```bash
+cd frontend
+npm install
+cp .env.example .env.local   # completar las variables
+npm run dev
+```
+
+Variables de entorno (`frontend/.env.local`):
+
+| Variable | Requerida | Descripción |
+|---|---|---|
+| `VITE_WALLETCONNECT_PROJECT_ID` | sí | Project ID de WalletConnect Cloud (RainbowKit). |
+| `VITE_JOBMARKETPLACE_ADDRESS` | sí | Dirección del `JobMarketplace` en Sepolia. |
+| `VITE_JOBMARKETPLACE_DEPLOY_BLOCK` | no | Bloque de deploy; evita escanear toda la cadena al leer eventos `JobCreated`. |
+| `VITE_PINATA_JWT` | no | JWT de Pinata. Si se setea, los deliverables se suben a IPFS (ver decisiones de diseño). |
+| `VITE_IPFS_GATEWAY` | no | Gateway IPFS de lectura (default `https://gateway.pinata.cloud/ipfs/`). |
+
+Para obtener tokens de prueba (JTK) y poder fondear, `MockERC20` tiene `mint` público: se puede
+mintear desde Etherscan (*Write Contract* del token) a la wallet del cliente.
+
 ## Decisiones de diseño
 
 ### Flujo de estados
@@ -81,4 +105,13 @@ El campo `evaluator` acepta cualquier dirección, incluyendo contratos. Esto per
 
 ### `deliverableRef` como bytes32
 
-La referencia a la entrega se almacena como `bytes32` (hash IPFS u otro), manteniendo el contrato agnóstico al sistema de almacenamiento off-chain y reduciendo el costo de gas respecto a almacenar strings.
+La referencia a la entrega se almacena como `bytes32`, manteniendo el contrato agnóstico al sistema de almacenamiento off-chain y reduciendo el costo de gas respecto a almacenar strings. El contenido del deliverable no se guarda on-chain (es caro y, además, no debe ser público hasta que el evaluador da el visto bueno).
+
+### Almacenamiento del deliverable: localStorage + IPFS (híbrido, bonus)
+
+El contenido del deliverable se guarda **off-chain** de forma híbrida, según haya o no IPFS configurado:
+
+- **Sin IPFS (default):** `deliverableRef = keccak256(contenido)` y el contenido queda en `localStorage`. Es suficiente para la entrega, con la limitación de que el evaluador debe abrir la app en el mismo navegador donde se hizo la entrega.
+- **Con IPFS (bonus):** si se setea `VITE_PINATA_JWT`, al enviar la entrega el contenido se sube a IPFS vía Pinata y `deliverableRef` pasa a ser el **CID** del archivo. Como un CIDv0 es un multihash sha2-256 de 34 bytes (`0x12 0x20` + digest de 32 bytes), guardamos solo el digest de 32 bytes en el `bytes32` y reconstruimos el CID al leer. Así cualquier evaluador accede al deliverable **desde cualquier dispositivo**, alineado con el espíritu descentralizado del protocolo.
+
+En ambos casos se guarda una copia local como caché. Al leer, la app intenta primero el caché local y, si no está, reconstruye el CID y lo trae desde el gateway IPFS. El contrato no cambia entre un modo y otro: siempre recibe un `bytes32`.

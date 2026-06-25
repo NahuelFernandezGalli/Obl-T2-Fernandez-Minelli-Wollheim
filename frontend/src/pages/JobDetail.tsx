@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAccount } from 'wagmi';
 import { type Address, type Hex } from 'viem';
@@ -5,7 +6,7 @@ import { useJob, type Job } from '../hooks/useJobs';
 import { useTokenMeta, type TokenMeta } from '../hooks/useToken';
 import { JobStatus, ZERO_ADDRESS } from '../config/marketplace';
 import { formatAddress, formatAmount, statusLabel, statusClass, formatExpiry, isExpired } from '../lib/format';
-import { loadDeliverable, isZeroRef } from '../lib/deliverable';
+import { fetchDeliverable, isZeroRef, type DeliverableResult } from '../lib/deliverable';
 import {
   SetProviderAction,
   FundAction,
@@ -65,9 +66,21 @@ export function JobDetail() {
  * On-chain solo está el hash `deliverableRef`; el evaluador necesita ver el contenido para decidir.
  */
 function DeliverablePanel({ deliverableRef }: { deliverableRef: Hex }) {
-  if (isZeroRef(deliverableRef)) return null;
+  const [result, setResult] = useState<DeliverableResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const zero = isZeroRef(deliverableRef);
 
-  const content = loadDeliverable(deliverableRef);
+  useEffect(() => {
+    if (zero) return;
+    let active = true;
+    setLoading(true);
+    fetchDeliverable(deliverableRef)
+      .then((r) => { if (active) setResult(r); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [deliverableRef, zero]);
+
+  if (zero) return null;
 
   return (
     <div className="panel">
@@ -76,12 +89,22 @@ function DeliverablePanel({ deliverableRef }: { deliverableRef: Hex }) {
         <dt>Referencia (on-chain)</dt>
         <dd><code>{deliverableRef}</code></dd>
       </dl>
-      {content !== null ? (
-        <pre className="deliverable-content">{content}</pre>
+      {loading ? (
+        <p className="muted">Cargando entregable…</p>
+      ) : result ? (
+        <>
+          <pre className="deliverable-content">{result.content}</pre>
+          <p className="muted">
+            Fuente: {result.source === 'ipfs' ? 'IPFS' : 'localStorage (este navegador)'}
+            {result.url && (
+              <> · <a href={result.url} target="_blank" rel="noreferrer">ver en gateway ↗</a></>
+            )}
+          </p>
+        </>
       ) : (
         <p className="muted">
-          El contenido no está en este navegador. El proveedor lo guardó localmente; para revisarlo,
-          el evaluador debe abrir la app en el mismo navegador donde se hizo la entrega.
+          El contenido no está disponible. Si se guardó solo en localStorage, el evaluador debe abrir
+          la app en el mismo navegador donde se hizo la entrega.
         </p>
       )}
     </div>
