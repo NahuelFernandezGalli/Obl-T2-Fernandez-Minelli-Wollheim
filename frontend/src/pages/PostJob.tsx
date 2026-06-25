@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useWriteContract } from 'wagmi';
-import { parseUnits, isAddress, type Address } from 'viem';
+import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { parseUnits, isAddress, type Address, type Hex } from 'viem';
 import { JOBMARKETPLACE_ADDRESS, JOBMARKETPLACE_ABI, ZERO_ADDRESS } from '../config/marketplace';
 import { useTokenMeta } from '../hooks/useToken';
 import { decodeRevert } from '../lib/errors';
@@ -17,8 +17,17 @@ export function PostJob() {
   const [provider, setProvider] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
   const [error, setError] = useState('');
+  const [hash, setHash] = useState<Hex | undefined>(undefined);
 
   const { writeContract, isPending } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  // Navegamos al tablero recién cuando la tx se confirma (así el trabajo ya aparece en la lista).
+  useEffect(() => {
+    if (isSuccess) navigate('/');
+  }, [isSuccess, navigate]);
+
+  const busy = isPending || isConfirming;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -61,7 +70,7 @@ export function PostJob() {
         args: [description, parsedBudget, evaluator as Address, providerArg, expiresUnix],
       },
       {
-        onSuccess: () => navigate('/'),
+        onSuccess: (txHash) => setHash(txHash),
         onError: (e) => setError(decodeRevert(e)),
       },
     );
@@ -97,8 +106,8 @@ export function PostJob() {
           <input type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} required />
         </label>
         {error && <p className="error">{error}</p>}
-        <button type="submit" disabled={isPending}>
-          {isPending ? 'Enviando…' : 'Publicar trabajo'}
+        <button type="submit" disabled={busy}>
+          {busy ? 'Enviando…' : 'Publicar trabajo'}
         </button>
       </form>
     </section>

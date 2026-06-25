@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { useWriteContract } from 'wagmi';
+import { useEffect, useRef, useState } from 'react';
+import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useQueryClient } from '@tanstack/react-query';
 import { isAddress, stringToHex, type Address, type Hex } from 'viem';
 import { JOBMARKETPLACE_ADDRESS, JOBMARKETPLACE_ABI } from '../config/marketplace';
 import { ERC20_ABI } from '../config/erc20';
@@ -16,19 +17,38 @@ function reasonToBytes32(reason: string): Hex {
   return stringToHex(reason.slice(0, 31), { size: 32 });
 }
 
+/**
+ * Ejecuta una escritura, espera la confirmación de la tx y al confirmar invalida las queries
+ * (para que el estado se actualice sin recargar — requisito de UX de la consigna).
+ * `onConfirmed` se dispara recién cuando la tx queda minada.
+ */
 function useAction() {
+  const queryClient = useQueryClient();
   const { writeContract, isPending } = useWriteContract();
   const [error, setError] = useState('');
+  const [hash, setHash] = useState<Hex | undefined>(undefined);
+  const onConfirmedRef = useRef<(() => void) | undefined>(undefined);
 
-  function run(args: Parameters<typeof writeContract>[0], onDone?: () => void) {
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  useEffect(() => {
+    if (!isSuccess) return;
+    void queryClient.invalidateQueries();
+    onConfirmedRef.current?.();
+    onConfirmedRef.current = undefined;
+    setHash(undefined);
+  }, [isSuccess, queryClient]);
+
+  function run(args: Parameters<typeof writeContract>[0], onConfirmed?: () => void) {
     setError('');
+    onConfirmedRef.current = onConfirmed;
     writeContract(args, {
-      onSuccess: () => onDone?.(),
+      onSuccess: (txHash) => setHash(txHash),
       onError: (e) => setError(decodeRevert(e)),
     });
   }
 
-  return { run, isPending, error };
+  return { run, isPending: isPending || isConfirming, error };
 }
 
 function mkt(functionName: string, args: readonly unknown[]) {
