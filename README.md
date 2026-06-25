@@ -116,6 +116,12 @@ El contenido del deliverable se guarda **off-chain** de forma híbrida, según h
 
 En ambos casos se guarda una copia local como caché. Al leer, la app intenta primero el caché local y, si no está, reconstruye el CID y lo trae desde el gateway IPFS. El contrato no cambia entre un modo y otro: siempre recibe un `bytes32`.
 
+## Desvíos y limitaciones
+
+- **Aprobación vía MultiSig desde su propia interfaz.** Cuando el evaluador de un trabajo es un contrato MultiSig, la aprobación (`complete`) no se dispara desde esta UI sino desde la interfaz del MultiSig: un signer crea una propuesta que llama a `complete(jobId, reason)` del marketplace y, al alcanzar el threshold, se ejecuta. No es un desvío de la especificación —la Parte B solo exige "Aprobar = `complete()`" para un evaluador EOA, y el caso MultiSig surge naturalmente del protocolo (está cubierto en los tests)— pero se documenta como limitación de la UI. La pantalla de detalle muestra una nota indicándolo.
+- **Deliverable en localStorage sin IPFS.** Si no se configura `VITE_PINATA_JWT`, el contenido del deliverable queda en el `localStorage` del navegador del proveedor, por lo que el evaluador debe abrir la app en el mismo navegador para verlo. El bonus de IPFS (configurando el JWT) elimina esta limitación. Ver [Almacenamiento del deliverable](#almacenamiento-del-deliverable-localstorage--ipfs-híbrido-bonus).
+- **Listado del tablero por eventos.** El tablero descubre los trabajos leyendo los eventos `JobCreated` desde el bloque de deploy (`VITE_JOBMARKETPLACE_DEPLOY_BLOCK`) en tramos, y lee el estado vivo de cada uno con `jobs(id)`. Arrancar la lectura de eventos en el bloque de deploy evita que el RPC rechace el rango por escanear toda la cadena.
+
 ## Capturas de la app
 
 ### Tablero — listado de trabajos por eventos `JobCreated`
